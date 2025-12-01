@@ -8,7 +8,8 @@ Dự án Backend cung cấp RESTful API để quản lý các hoạt động tro
 
 - **Node.js**
 - **Express.js**
-- **TypeScript**
+- **JWT**
+- **JavaScript**
 - **MongoDB + Mongoose**
 - **Nodemon**
 - **dotenv**
