@@ -1,18 +1,31 @@
 const mongoose = require("mongoose");
 
-const KhachHangSchema = new mongoose.Schema(
+const CustomerSchema = new mongoose.Schema(
   {
-    ten: String,
-    dia_chi: String,
-    sdt: String,
+    name: String,
+    address: String,
+    phoneNumber: String,
     email: String,
     password: String,
-    hinh_anh: String,
-    nhiem_vu: { type: String, default: "user" },
-    dat_phong: [{ type: mongoose.Schema.Types.ObjectId, ref: "DatPhong" }],
-    hoa_don: [{ type: mongoose.Schema.Types.ObjectId, ref: "HoaDon" }],
+    imageUrl: String,
+    role: {
+      type: String,
+      default: "user",
+    },
+    bookings: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Booking",
+      },
+    ],
+    invoices: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Invoice",
+      },
+    ],
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("KhachHang", KhachHangSchema);
+module.exports = mongoose.model("Customer", CustomerSchema);

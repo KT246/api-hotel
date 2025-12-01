@@ -5,10 +5,12 @@ exports.checkAuthen = async (req, res, next) => {
   try {
     const headerToken = req.headers.authorization;
     if (!headerToken) {
-      return res.status(401).json({ message: "Không có Token!" });
+      return res
+        .status(401)
+        .json({ message: "Không có Token! không có quyền!" });
     }
     const token = headerToken.split(" ")[1];
-    const decode = jwt.verify(token, process.env.SECRET);
+    const decode = jwt.verify(token, process.env.SECRET_JWT);
     req.user = decode;
     next();
   } catch (error) {
@@ -19,8 +21,8 @@ exports.checkAuthen = async (req, res, next) => {
 exports.checkRole = async (req, res, next) => {
   try {
     const checkRole = req.user.role;
-    // console.log(req.user.role);
-    if (checkRole.role !== "admin") {
+    // console.log(checkRole)
+    if (checkRole !== "admin") {
       return res.status(403).json({ message: "Bạn không có quyền truy cập!" });
     }
 

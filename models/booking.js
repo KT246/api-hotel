@@ -1,16 +1,19 @@
 const mongoose = require("mongoose");
 const { type } = require("os");
 
-const DatPhongSchema = new mongoose.Schema(
+const BookingSchema = new mongoose.Schema(
   {
-    khach_hang_id: { type: mongoose.Schema.Types.ObjectId, ref: "KhachHang" },
-    phong_id: { type: mongoose.Schema.Types.ObjectId, ref: "Phong" },
-    ngay_dat: Date,
-    ngay_tra: Date,
-    tong_tien: Number,
-    trang_thai: { type: String, default: "cho_xac_nhan" },
+    customerId: { type: mongoose.Schema.Types.ObjectId, ref: "Customer" },
+    roomId: { type: mongoose.Schema.Types.ObjectId, ref: "Room" },
+    checkInDate: Date,
+    checkOutDate: Date,
+    totalAmount: Number,
+    status: {
+      type: String,
+      default: "pendingConfirmation",
+    },
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("DatPhong", DatPhongSchema);
+module.exports = mongoose.model("Booking", BookingSchema);

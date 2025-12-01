@@ -1,165 +1,137 @@
 const mongoose = require("mongoose");
-const booking = require("../models/booking");
-const customer = require("../models/customer");
-const room = require("../models/room");
+const Booking = require("../models/booking");
+const Customer = require("../models/customer");
+const Room = require("../models/room");
 
-exports.create_online = async (req, res) => {
+exports.create = async (req, res) => {
+  const {
+    name,
+    address,
+    phoneNumber,
+    roomNumber,
+    checkInDate,
+    checkOutDate,
+    totalAmount,
+  } = req.body;
   try {
-    const phong_id = await room.findOne({ _id: req.body.phong_id }).exec();
-    if (phong_id.tinh_trang !== "trong") {
-      return res.send({ message: "Phòng đang thuê hoặc sửa" });
+    const roomData = await Room.findOne({ roomNumber: roomNumber }).exec();
+
+    if (!roomData) {
+      return res.status(404).send({ message: "Room not found." });
     }
-    const data = await booking(req.body).save();
-    res.send({ message: "Create booking successful", data: data });
-  } catch (error) {
-    res.send({ message: "Sever error", error: error });
-  }
-};
 
-exports.create_offline = async (req, res) => {
-  const { ten, dia_chi, sdt, phong_so, ngay_dat, ngay_tra, tong_tien } =
-    req.body;
-  try {
-    const phong_id = await room.findOne({ so_phong: phong_so }).exec();
-    if (phong_id.tinh_trang !== "trong") {
-      return res.send({ message: "Phòng đang thuê hoặc sửa" });
+    if (roomData.isAvailable === false) {
+      return res
+        .status(400)
+        .send({ message: "Room is currently occupied or under maintenance." });
     }
-    const customer_id = await customer({
-      ten,
-      dia_chi,
-      sdt,
-    }).save();
 
-    // console.log(customer_id);
+    const newCustomer = new Customer({
+      name,
+      address,
+      phoneNumber,
+    });
+    const customerData = await newCustomer.save();
 
-    const data = await booking({
-      khach_hang_id: customer_id._id,
-      phong_id: phong_id._id,
-      ngay_dat,
-      ngay_tra,
-      tong_tien,
-      trang_thai: "da_xac_nhan",
-    }).save();
+    const bookingData = await Booking.create({
+      customerId: customerData._id,
+      roomId: roomData._id,
+      checkInDate,
+      checkOutDate,
+      totalAmount,
+      status: "pendingConfirmation",
+    });
 
-    await room
-      .findOneAndUpdate(
-        { _id: data.phong_id },
-        {
-          $set: { tinh_trang: "dang_thue" },
-        },
-        {
-          new: true,
-        }
-      )
-      .exec();
-    res.send({ message: "Create booking successful", data: data });
+    await Room.findOneAndUpdate(
+      { _id: roomData._id },
+      {
+        $set: { isAvailable: false },
+      },
+      {
+        new: true,
+      }
+    ).exec();
+
+    res
+      .status(201)
+      .send({ message: "Create booking successful", data: bookingData });
   } catch (error) {
-    res.send({ message: "Sever error", error: error });
+    console.error("Booking creation error:", error);
+    res.status(500).send({ message: "Server error", error: error.message });
   }
 };
 
 exports.list = async (req, res) => {
   try {
-    const data = await booking.find({}).exec();
-
-    res.send({ message: "Create booking successful", data: data });
+    const data = await Booking.find({}).exec();
+    res
+      .status(200)
+      .send({ message: "Fetch booking list successful", data: data });
   } catch (error) {
-    res.send({ message: "Sever error", error: error });
+    res.status(500).send({ message: "Server error", error: error.message });
   }
 };
 
 exports.read = async (req, res) => {
   try {
     const id = req.params.id;
-    const data = await booking.find({ _id: id }).exec();
-    res.send({ message: "Create booking successful", data: data });
+    const data = await Booking.findById(id).exec();
+
+    if (!data) {
+      return res.status(404).send({ message: "Booking not found." });
+    }
+
+    res.status(200).send({ message: "Fetch booking successful", data: data });
   } catch (error) {
-    res.send({ message: "Sever error", error: error });
+    res.status(500).send({ message: "Server error", error: error.message });
   }
 };
 
 exports.update = async (req, res) => {
   const id = req.params.id;
   try {
-    const data = await booking
-      .findOne({ _id: id }, req.body, { new: true })
-      .exec();
-    res.send({ message: "Cập nhật đặt phòng thành công! ", data: data });
-  } catch (error) {
-    res.send({ message: "Sever error", error: error });
-  }
-};
+    const data = await Booking.findByIdAndUpdate(id, req.body, {
+      new: true,
+    }).exec();
 
-exports.update_getRoom = async (req, res) => {
-  const id = req.params.id;
-  try {
-    const data = await booking.findOne({ _id: id }).exec();
-    await room
-      .findOneAndUpdate(
-        { _id: data.phong_id },
-        {
-          $set: { tinh_trang: "dang_thue" },
-        },
-        {
-          new: true,
-        }
-      )
-      .exec();
-    res.send({ message: "update booking successful", data: data });
-  } catch (error) {
-    res.send({ message: "Sever error", error: error });
-  }
-};
+    if (!data) {
+      return res.status(404).send({ message: "Booking not found for update." });
+    }
 
-exports.update_active = async (req, res) => {
-  const id = req.params.id;
-  try {
-    const data = await booking
-      .findOneAndUpdate(
-        { _id: id },
-        {
-          $set: {
-            trang_thai: "da_xac_nhan",
-          },
-        }
-      )
-      .exec();
-    await room
-      .findOneAndUpdate(
-        { _id: data.phong_id },
-        {
-          $set: { tinh_trang: "da_dat" },
-        },
-        {
-          new: true,
-        }
-      )
-      .exec();
-    res.send({ message: "Đã đặt phòng thành công!", data: data });
+    res
+      .status(200)
+      .send({ message: "Update booking successful! ", data: data });
   } catch (error) {
-    res.send({ message: "Sever error", error: error });
+    res.status(500).send({ message: "Server error", error: error.message });
   }
 };
 
 exports.remove = async (req, res) => {
   try {
-    //
     const id = req.params.id;
-    const data = await booking.findOne({ _id: id }).exec();
-    await room
-      .findOneAndUpdate(
-        { _id: data.phong_id },
-        {
-          $set: {
-            tinh_trang: "trong",
-          },
+
+    const bookingData = await Booking.findById(id).exec();
+
+    if (!bookingData) {
+      return res
+        .status(404)
+        .send({ message: "Booking not found for cancellation." });
+    }
+
+    await Room.findOneAndUpdate(
+      { _id: bookingData.roomId },
+      {
+        $set: {
+          isAvailable: true,
         },
-        { new: true }
-      )
-      .exec();
-    await booking.findOneAndDelete({ _id: id }).exec();
-    res.send({ message: "Hủy thành công!" });
+      },
+      { new: true }
+    ).exec();
+
+    await Booking.findByIdAndDelete(id).exec();
+
+    res.status(200).send({ message: "Cancellation successful!" });
   } catch (error) {
-    res.send({ message: "Sever error", error: error });
+    res.status(500).send({ message: "Server error", error: error.message });
   }
 };

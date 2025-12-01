@@ -1,15 +1,33 @@
 const mongoose = require("mongoose");
 
-const PhongSchema = new mongoose.Schema(
+const RoomSchema = new mongoose.Schema(
   {
-    so_phong: { type: Number, unique: true },
-    loai_phong: String,
-    gia_mot_dem: Number,
-    tinh_trang: String,
-    hinh_anh: String,
-    dat_phong: [{ type: mongoose.Schema.Types.ObjectId, ref: "DatPhong" }],
+    roomNumber: {
+      type: Number,
+      unique: true,
+      required: true,
+    },
+    roomType: {
+      type: String,
+    },
+    pricePerNight: {
+      type: Number,
+    },
+    isAvailable: {
+      type: Boolean,
+      default: true,
+    },
+    imageUrl: {
+      type: String,
+    },
+    bookings: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Booking",
+      },
+    ],
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Phong", PhongSchema);
+module.exports = mongoose.model("Room", RoomSchema);

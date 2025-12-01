@@ -1,15 +1,29 @@
 const mongoose = require("mongoose");
 
-const NhanVienSchema = new mongoose.Schema(
+const EmployeeSchema = new mongoose.Schema(
   {
-    ten: String,
-    chuc_vu: String,
-    sdt: String,
-    ca_lam_viec: String,
-    luong: Number,
-    hinh_anh: String,
+    name: {
+      type: String,
+      required: true,
+    },
+    position: {
+      type: String,
+      required: true,
+    },
+    phoneNumber: {
+      type: String,
+    },
+    workShift: {
+      type: String,
+    },
+    salary: {
+      type: Number,
+    },
+    imageUrl: {
+      type: String,
+    },
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("nhanVien", NhanVienSchema);
+module.exports = mongoose.model("Employee", EmployeeSchema);

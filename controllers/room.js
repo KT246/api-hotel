@@ -1,59 +1,79 @@
-const room = require("../models/room");
+const mongoose = require("mongoose");
+const Room = require("../models/room");
 
 exports.create = async (req, res) => {
   try {
-    // console.log(req.body);
-    const data = await room(req.body).save();
-    res.send({ message: "Tạo phòng thành công!", data: data });
+    const data = await Room.create(req.body);
+    res.status(201).send({ message: "Create room successful!", data: data });
   } catch (error) {
-    res.status(500).send("Sever error");
+    if (error.code === 11000) {
+      return res.status(409).send({ message: "Room number already exists." });
+    }
+    res.status(500).send({ message: "Server error", error: error.message });
   }
 };
 
 exports.list = async (req, res) => {
   try {
-    // console.log(req.body);
-    const data = await room.find({}).exec();
-    res.send({ message: "Get list success", data: data });
+    const data = await Room.find({}).exec();
+    res.status(200).send({ message: "Fetch room list successful", data: data });
   } catch (error) {
-    res.status(500).send("Sever error");
+    res.status(500).send({ message: "Server error", error: error.message });
   }
 };
 
 exports.read = async (req, res) => {
   try {
     const id = req.params.id;
-    const data = await room.find({ _id: id }).exec();
-    res.send({ message: "Get room success", data: data });
+    const data = await Room.findById(id).exec();
+
+    if (!data) {
+      return res.status(404).send({ message: "Room not found." });
+    }
+
+    res.status(200).send({ message: "Fetch room successful", data: data });
   } catch (error) {
-    res.status(500).send("Sever error");
+    res.status(500).send({ message: "Server error", error: error.message });
   }
 };
 
 exports.update = async (req, res) => {
   try {
     const id = req.params.id;
-    const data = await room
-      .findOneAndUpdate({ _id: id }, req.body, {
-        new: true,
-      })
-      .exec();
-    res.send({ message: "Cập nhật phòng thành công!", data: data });
+    const data = await Room.findByIdAndUpdate(id, req.body, {
+      new: true,
+      runValidators: true,
+    }).exec();
+
+    if (!data) {
+      return res.status(404).send({ message: "Room not found for update." });
+    }
+
+    res.status(200).send({ message: "Update room successful!", data: data });
   } catch (error) {
-    res.status(500).send("Sever error");
+    res.status(500).send({ message: "Server error", error: error.message });
   }
 };
 
 exports.remove = async (req, res) => {
   try {
     const id = req.params.id;
-    const data = await room.findOne({ _id: id }).exec();
-    if (data.tinh_trang === "dang_thue") {
-      return res.send({ message: "Phòng đang thuê không thể xóa được." });
+    const roomData = await Room.findById(id).exec();
+
+    if (!roomData) {
+      return res.status(404).send({ message: "Room not found for deletion." });
     }
-    await room.findOneAndDelete({ _id: id }).exec();
-    res.send({ message: "Đã xóa phòng thành công!" });
+
+    // Kiểm tra trạng thái isAvailable (true/false)
+    if (roomData.isAvailable === false) {
+      return res
+        .status(400)
+        .send({ message: "Room is currently occupied and cannot be deleted." });
+    }
+
+    await Room.findByIdAndDelete(id).exec();
+    res.status(200).send({ message: "Delete room successful!" });
   } catch (error) {
-    res.status(500).send("Sever error");
+    res.status(500).send({ message: "Server error", error: error.message });
   }
 };
